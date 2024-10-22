@@ -16,6 +16,7 @@ async function register() {
     alert(result.message || 'Registration failed');
   }
 }
+//this is me doing work
 
 async function postMessage() {
   const messageInput = document.getElementById('messageInput');
