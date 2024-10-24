@@ -133,6 +133,7 @@ app.post('/logout', (req, res) => {
 const postSchema = new mongoose.Schema({
   title: String,
   content: String,
+  topic: String, // Add topic field
   timestamp: { type: Date, default: Date.now },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });
@@ -140,32 +141,31 @@ const postSchema = new mongoose.Schema({
 const Post = mongoose.model('Post', postSchema);
 
 // Fetch all posts
-app.get('/posts', async (req, res) => {
+app.get('/posts/topic/:topic', async (req, res) => {
+  const { topic } = req.params;
   try {
-    const posts = await Post.find().sort({ timestamp: -1 }).populate('userId', 'username');
+    const posts = await Post.find({ topic }).sort({ timestamp: -1 }).populate('userId', 'username');
     res.json(posts);
   } catch (err) {
-    res.status(500).send('Error retrieving posts');
+    res.status(500).send('Error retrieving posts by topic');
   }
 });
 
 // Create a new post
 app.post('/posts', async (req, res) => {
-  const { title, content } = req.body;
+  const { title, content, topic } = req.body;
   const userId = req.session.userId;
 
-  if (!title || !content) {
-    return res.status(400).send('Title and content are required');
+  if (!title || !content || !topic) {
+    return res.status(400).send('Title, content, and topic are required');
   }
 
-  const post = new Post({ title, content, userId });
+  const post = new Post({ title, content, topic, userId });
 
   try {
     await post.save();
-    console.log('Post saved successfully'); // Debug: Log success
     res.send({ success: true });
   } catch (err) {
-    console.error('Error saving post:', err); // Debug: Log error
     res.status(500).send('Error saving post');
   }
 });

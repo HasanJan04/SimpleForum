@@ -196,18 +196,19 @@ async function createPost() {
   }
 }
 
-async function fetchPosts() {
-  const response = await fetch('/posts');
+async function fetchPosts(topic = '') {
+  const url = topic ? `/posts/topic/${topic}` : '/posts';
+  const response = await fetch(url);
   const posts = await response.json();
 
   const postsList = document.getElementById('postsList');
   postsList.innerHTML = '';
 
   posts.forEach((post) => {
-    const postItem = document.createElement('li');
-    postItem.className = 'list-group-item';
-    postItem.innerHTML = `
-      <h5>${post.userId.username}: ${post.title}</h5>
+    const li = document.createElement('li');
+    li.className = 'list-group-item';
+    li.innerHTML = `
+      <h5>${post.userId.username}: ${post.title} (${post.topic})</h5>
       <p>${post.content}</p>
       <div>
         <textarea class="form-control mb-2" placeholder="Write a reply" id="replyContent-${post._id}"></textarea>
@@ -215,10 +216,43 @@ async function fetchPosts() {
       </div>
       <ul id="repliesList-${post._id}" class="list-group mt-2"></ul>
     `;
-    postsList.appendChild(postItem);
+    postsList.appendChild(li);
     fetchReplies(post._id); // Fetch replies for each post
   });
 }
+
+async function createPost() {
+  const title = document.getElementById('postTitle').value.trim();
+  const content = document.getElementById('postContent').value.trim();
+  const topic = document.getElementById('postTopic').value;
+
+  if (!title || !content || !topic) {
+    alert('Please fill out title, content, and select a topic to submit a post.');
+    return;
+  }
+
+  const response = await fetch('/posts', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ title, content, topic }),
+  });
+
+  if (response.ok) {
+    document.getElementById('postTitle').value = '';
+    document.getElementById('postContent').value = '';
+    document.getElementById('postTopic').value = '';
+    fetchPosts(); // Reload posts to show the new post
+  } else {
+    alert('Failed to create post.');
+  }
+}
+
+document.getElementById('createPostButton').addEventListener('click', createPost);
+
+// Initially load all posts
+fetchPosts();
 
 async function addReply(postId) {
   const replyContent = document.getElementById(`replyContent-${postId}`).value.trim();

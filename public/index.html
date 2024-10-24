@@ -70,3 +70,18 @@
 <script>
 // Frontend JavaScript logic goes here
 </script>
+<div class="card p-4 mb-4" id="postSection">
+  <h2>Create a Post</h2>
+  <input id="postTitle" class="form-control mb-2" placeholder="Title" />
+  <textarea id="postContent" class="form-control mb-2" placeholder="Content"></textarea>
+  <select id="postTopic" class="form-control mb-2">
+    <option value="">Select Topic</option>
+    <option value="Technology">Technology</option>
+    <option value="Science">Science</option>
+    <option value="Art">Art</option>
+    <!-- Add more topics as needed -->
+  </select>
+  <button id="createPostButton" class="btn btn-primary btn-block">Create Post</button>
+</div>
+<h2>Discussion Posts:</h2>
+<ul id="postsList" class="list-group"></ul>
