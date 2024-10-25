@@ -282,17 +282,47 @@ async function fetchReplies(postId) {
   const replies = await response.json();
 
   const repliesList = document.getElementById(`repliesList-${postId}`);
-  repliesList.innerHTML = '';
-
-  replies.forEach((reply) => {
-    const replyItem = document.createElement('li');
-    replyItem.className = 'list-group-item';
-    replyItem.textContent = `${reply.userId.username}: ${reply.content}`;
-    repliesList.appendChild(replyItem);
-  });
+  repliesList.innerHTML = createRepliesHTML(replies);
 }
 
-document.getElementById('createPostButton').addEventListener('click', createPost);
+function createRepliesHTML(replies) {
+  return replies.map(reply => {
+    return `
+      <li class="list-group-item">
+        <div><strong>${reply.userId.username}</strong>: ${reply.content}</div>
+        <button class="btn btn-link btn-sm" onclick="showReplyForm('${reply._id}')">Reply</button>
+        <div id="replyForm-${reply._id}" style="display:none;" class="mb-2">
+          <textarea class="form-control mb-2" placeholder="Write a nested reply" id="nestedReplyContent-${reply._id}"></textarea>
+          <button class="btn btn-primary btn-sm" onclick="addNestedReply('${reply.postId}', '${reply._id}')">Submit Reply</button>
+        </div>
+        <ul>${createRepliesHTML(reply.children)}</ul>
+      </li>
+    `;
+  }).join('');
+}
 
-// Initially load posts
-fetchPosts();
+function showReplyForm(replyId) {
+  document.getElementById(`replyForm-${replyId}`).style.display = 'block';
+}
+
+async function addNestedReply(postId, parentId) {
+  const replyContent = document.getElementById(`nestedReplyContent-${parentId}`).value.trim();
+  if (!replyContent) {
+    alert('A reply cannot be empty');
+    return;
+  }
+
+  const response = await fetch(`/posts/${postId}/replies`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ content: replyContent, parentId }),
+  });
+
+  if (response.ok) {
+    fetchReplies(postId); // Reload replies to show the new reply
+  } else {
+    alert('Failed to add reply.');
+  }
+}

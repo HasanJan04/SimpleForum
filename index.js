@@ -174,7 +174,8 @@ const replySchema = new mongoose.Schema({
   content: String,
   timestamp: { type: Date, default: Date.now },
   postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Reply', default: null } // Reference to parent reply
 });
 
 const Reply = mongoose.model('Reply', replySchema);
@@ -206,6 +207,57 @@ app.get('/posts/:postId/replies', async (req, res) => {
   try {
     const replies = await Reply.find({ postId }).populate('userId', 'username').sort({ timestamp: -1 });
     res.json(replies);
+  } catch (err) {
+    res.status(500).send('Error retrieving replies');
+  }
+});
+
+app.post('/posts/:postId/replies', async (req, res) => {
+  const { content, parentId } = req.body; // parentId can be null or the ID of another reply
+  const userId = req.session.userId;
+  const { postId } = req.params;
+
+  if (!content) {
+    return res.status(400).send('Reply content is required');
+  }
+
+  const reply = new Reply({ content, postId, userId, parentId });
+
+  try {
+    await reply.save();
+    res.send({ success: true });
+  } catch (err) {
+    res.status(500).send('Error saving reply');
+  }
+});
+
+app.get('/posts/:postId/replies', async (req, res) => {
+  const { postId } = req.params;
+
+  try {
+    // Fetch all replies linked to this post
+    const replies = await Reply.find({ postId })
+      .lean() // lean() provides plain JS objects instead of Mongoose Document instances, which helps in manipulating data.
+      .populate('userId', 'username')
+      .exec();
+
+    // Create a map to streamline parent-child relationships
+    const replyMap = {};
+    replies.forEach((reply) => {
+      replyMap[reply._id] = { ...reply, children: [] };
+    });
+
+    // Nest child replies under their parent
+    const nestedReplies = [];
+    replies.forEach((reply) => {
+      if (reply.parentId) {
+        replyMap[reply.parentId].children.push(replyMap[reply._id]);
+      } else {
+        nestedReplies.push(replyMap[reply._id]);
+      }
+    });
+
+    res.json(nestedReplies);
   } catch (err) {
     res.status(500).send('Error retrieving replies');
   }
