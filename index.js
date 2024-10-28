@@ -262,3 +262,17 @@ app.get('/posts/:postId/replies', async (req, res) => {
     res.status(500).send('Error retrieving replies');
   }
 });
+
+app.get('/post/:postId', async (req, res) => {
+  const { postId } = req.params;
+  try {
+    const post = await Post.findById(postId).populate('userId', 'username');
+    if (post) {
+      res.json(post);
+    } else {
+      res.status(404).send('Post not found');
+    }
+  } catch (err) {
+    res.status(500).send('Error retrieving post');
+  }
+});

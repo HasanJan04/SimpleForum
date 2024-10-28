@@ -326,3 +326,50 @@ async function addNestedReply(postId, parentId) {
     alert('Failed to add reply.');
   }
 }
+
+// Function to generate a shareable link
+function generateShareableLink(postId) {
+  return `${window.location.origin}/post/${postId}`;
+}
+
+// Function to copy text to the clipboard
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Link copied to clipboard');
+  }).catch(err => {
+    alert('Failed to copy link', err);
+  });
+}
+
+// Modify existing code to include a copy button
+async function fetchPosts(topic = '') {
+  const url = topic ? `/posts/topic/${topic}` : '/posts';
+  const response = await fetch(url);
+  const posts = await response.json();
+
+  const postsList = document.getElementById('postsList');
+  postsList.innerHTML = '';
+
+  posts.forEach((post) => {
+    const li = document.createElement('li');
+    li.className = 'list-group-item';
+    const shareLink = generateShareableLink(post._id);
+    li.innerHTML = `
+      <h5>${post.userId.username}: ${post.title} (${post.topic})</h5>
+      <p>${post.content}</p>
+      <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('${shareLink}')">Copy Link</button>
+      <div>
+        <textarea class="form-control mb-2" placeholder="Write a reply" id="replyContent-${post._id}"></textarea>
+        <button class="btn btn-primary btn-sm" onclick="addReply('${post._id}')">Reply</button>
+      </div>
+      <ul id="repliesList-${post._id}" class="list-group mt-2"></ul>
+    `;
+    postsList.appendChild(li);
+    fetchReplies(post._id); // Fetch replies for each post
+  });
+}
+
+document.getElementById('createPostButton').addEventListener('click', createPost);
+
+// Initially load all posts
+fetchPosts();
