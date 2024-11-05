@@ -1,87 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Simple Forum</title>
-    <!-- Add Bootstrap CSS -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-      body { font-family: Arial, sans-serif; }
-      #auth { margin-bottom: 20px; }
-      ul { list-style-type: none; padding: 0; }
-    </style>
-  </head>
-  <body class="container mt-5">
-    <div id="auth" class="mb-4">
-      <div class="card p-4 mb-3">
-        <h2>Register</h2>
-        <input type="text" class="form-control mb-2" id="regUsername" placeholder="Username">
-        <input type="password" class="form-control mb-2" id="regPassword" placeholder="Password">
-        <button class="btn btn-primary btn-block" onclick="register()">Register</button>
-      </div>
-      <div class="card p-4">
-        <h2>Login</h2>
-        <input type="text" class="form-control mb-2" id="loginUsername" placeholder="Username">
-        <input type="password" class="form-control mb-2" id="loginPassword" placeholder="Password">
-        <button class="btn btn-primary btn-block" onclick="login()">Login</button>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple Forum</title>
+  <!-- Add Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { font-family: Arial, sans-serif; }
+    #auth { margin-bottom: 20px; }
+    ul { list-style-type: none; padding: 0; }
+  </style>
+</head>
+<body class="container mt-5">
+  <div id="auth" class="mb-4">
+    <div class="card p-4 mb-3">
+      <h2>Register</h2>
+      <input type="text" class="form-control mb-2" id="regUsername" placeholder="Username">
+      <input type="password" class="form-control mb-2" id="regPassword" placeholder="Password">
+      <button class="btn btn-primary btn-block" onclick="register()">Register</button>
     </div>
-    <button class="btn btn-secondary mb-4" onclick="logout()" id="logoutButton" style="display:none;">Logout</button>
+    <div class="card p-4">
+      <h2>Login</h2>
+      <input type="text" class="form-control mb-2" id="loginUsername" placeholder="Username">
+      <input type="password" class="form-control mb-2" id="loginPassword" placeholder="Password">
+      <button class="btn btn-primary btn-block" onclick="login()">Login</button>
+    </div>
+  </div>
+  <button class="btn btn-secondary mb-4" onclick="logout()" id="logoutButton" style="display:none;">Logout</button>
 
-    <h1 class="text-center mb-4">Welcome to the Simple Forum</h1>
-    <div class="card p-4 mb-4">
-      <div id="errorBanner" class="text-danger mb-3" style="display:none;">
-        There was a network error while fetching messages. Please check your connection.
-      </div>
-      <textarea id="messageInput" class="form-control mb-2" placeholder="Write your message here"></textarea>
-      <button id="postButton" class="btn btn-success btn-block">Post Message</button>
+  <h1 class="text-center mb-4">Welcome to the Simple Forum</h1>
+
+  <div class="card p-4 mb-4">
+    <div id="errorBanner" class="text-danger mb-3" style="display:none;">
+      There was a network error while fetching messages. Please check your connection.
     </div>
-    <h2>Messages:</h2>
-    <ul id="messagesList" class="list-group"></ul>
-    <script src="script.js"></script>
-  </body>
+    <textarea id="messageInput" class="form-control mb-2" placeholder="Write your message here"></textarea>
+    <button id="postButton" class="btn btn-success btn-block">Post Message</button>
+  </div>
+
+  <h2>Messages:</h2>
+  <ul id="messagesList" class="list-group"></ul>
+
+  <div class="card p-4 mb-4" id="postSection">
+    <h2>Create a Post</h2>
+    <input id="postTitle" class="form-control mb-2" placeholder="Title" />
+    <textarea id="postContent" class="form-control mb-2" placeholder="Content"></textarea>
+    <select id="postTopic" class="form-control mb-2">
+      <option value="">Select Topic</option>
+      <option value="Technology">Technology</option>
+      <option value="Science">Science</option>
+      <option value="Art">Art</option>
+      <!-- Add more topics as needed -->
+    </select>
+    <button id="createPostButton" class="btn btn-primary btn-block">Create Post</button>
+  </div>
+
+  <h2>Discussion Posts:</h2>
+  <ul id="postsList" class="list-group"></ul>
+
+  <script src="script.js"></script>
+
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     #messagesList li { background: #f9f9f9; margin-bottom: 5px; padding: 10px; border-radius: 5px; }
     .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     #logoutButton { position: absolute; top: 10px; right: 10px; }
   </style>
+</body>
 </html>
-<div class="card p-4 mb-4">
-  <h2>Create a Post</h2>
-  <input id="postTitle" class="form-control mb-2" placeholder="Title" />
-  <textarea id="postContent" class="form-control mb-2" placeholder="Content"></textarea>
-  <button id="createPostButton" class="btn btn-primary btn-block">Create Post</button>
-</div>
-<h2>Discussion Posts:</h2>
-<ul id="postsList" class="list-group"></ul>
-<div class="card p-4 mb-4" id="postSection">
-  <h2>Create a Post</h2>
-  <input id="postTitle" class="form-control mb-2" placeholder="Title" />
-  <textarea id="postContent" class="form-control mb-2" placeholder="Content"></textarea>
-  <button id="createPostButton" class="btn btn-primary btn-block">Create Post</button>
-</div>
-
-<h2>Discussion Posts:</h2>
-<ul id="postsList" class="list-group"></ul>
-
-<script>
-// Frontend JavaScript logic goes here
-</script>
-<div class="card p-4 mb-4" id="postSection">
-  <h2>Create a Post</h2>
-  <input id="postTitle" class="form-control mb-2" placeholder="Title" />
-  <textarea id="postContent" class="form-control mb-2" placeholder="Content"></textarea>
-  <select id="postTopic" class="form-control mb-2">
-    <option value="">Select Topic</option>
-    <option value="Technology">Technology</option>
-    <option value="Science">Science</option>
-    <option value="Art">Art</option>
-    <!-- Add more topics as needed -->
-  </select>
-  <button id="createPostButton" class="btn btn-primary btn-block">Create Post</button>
-</div>
-<h2>Discussion Posts:</h2>
-<ul id="postsList" class="list-group"></ul>

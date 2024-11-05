@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
- 
+
 const app = express();
 const port = 3000;
 
@@ -24,6 +24,33 @@ const messageSchema = new mongoose.Schema({
 
 const Message = mongoose.model('Message', messageSchema);
 
+const userSchema = new mongoose.Schema({
+  username: { type: String, unique: true },
+  password: String
+});
+
+const User = mongoose.model('User', userSchema);
+
+const postSchema = new mongoose.Schema({
+  title: String,
+  content: String,
+  topic: String, 
+  timestamp: { type: Date, default: Date.now },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+});
+
+const Post = mongoose.model('Post', postSchema);
+
+const replySchema = new mongoose.Schema({
+  content: String,
+  timestamp: { type: Date, default: Date.now },
+  postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Reply', default: null }
+});
+
+const Reply = mongoose.model('Reply', replySchema);
+
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -33,53 +60,14 @@ app.use(session({
   saveUninitialized: false
 }));
 
-const userSchema = new mongoose.Schema({
-  username: { type: String, unique: true },
-  password: String
-});
-
-const User = mongoose.model('User', userSchema);
-
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
-
-app.get('/messages', async (req, res) => {
-  try {
-    const messages = await Message.find().sort({ timestamp: -1 }).populate('userId', 'username');
-    res.json(messages);
-  } catch (err) {
-    res.status(500).send('Error retrieving messages');
-  }
-});
-
-app.post('/messages', async (req, res) => {
-  const messageContent = req.body.message;
-  const userId = req.session.userId;
-
-  if (!messageContent) {
-    return res.status(400).send('Message content is required');
-  }
-
-  const message = new Message({ content: messageContent, userId });
-
-  try {
-    await message.save();
-    res.send({ success: true });
-  } catch (err) {
-    res.status(500).send('Error saving message');
-  }
-});
-
 function isAuthenticated(req, res, next) {
   if (req.session.userId) {
     return next();
   } else {
-    res.json({ success: false, message: 'You need to log in' });
+    res.status(401).json({ success: false, message: 'You need to log in' });
   }
 }
 
-// Handling user registration
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -102,7 +90,6 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Handling user login
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -130,29 +117,36 @@ app.post('/logout', (req, res) => {
   res.json({ success: true });
 });
 
-const postSchema = new mongoose.Schema({
-  title: String,
-  content: String,
-  topic: String, // Add topic field
-  timestamp: { type: Date, default: Date.now },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
-});
+app.post('/messages', isAuthenticated, async (req, res) => {
+  const messageContent = req.body.message;
+  const userId = req.session.userId;
 
-const Post = mongoose.model('Post', postSchema);
+  if (!messageContent) {
+    return res.status(400).send('Message content is required');
+  }
 
-// Fetch all posts
-app.get('/posts/topic/:topic', async (req, res) => {
-  const { topic } = req.params;
+  const message = new Message({ content: messageContent, userId });
+
   try {
-    const posts = await Post.find({ topic }).sort({ timestamp: -1 }).populate('userId', 'username');
-    res.json(posts);
+    await message.save();
+    res.send({ success: true });
   } catch (err) {
-    res.status(500).send('Error retrieving posts by topic');
+    res.status(500).send('Error saving message');
   }
 });
 
-// Create a new post
-app.post('/posts', async (req, res) => {
+app.get('/messages', async (req, res) => {
+  try {
+    const messages = await Message.find().sort({ timestamp: -1 }).populate('userId', 'username');
+    res.json(messages);
+  } catch (err) {
+    res.status(500).send('Error retrieving messages');
+  }
+});
+
+app.post('/posts', isAuthenticated, async (req, res) => {
+  console.log('Received post creation request:', req.body); // Log received data
+
   const { title, content, topic } = req.body;
   const userId = req.session.userId;
 
@@ -164,56 +158,26 @@ app.post('/posts', async (req, res) => {
 
   try {
     await post.save();
+    console.log('Post saved successfully'); // Debug: Log success
     res.send({ success: true });
   } catch (err) {
+    console.error('Error saving post:', err);
     res.status(500).send('Error saving post');
   }
 });
 
-const replySchema = new mongoose.Schema({
-  content: String,
-  timestamp: { type: Date, default: Date.now },
-  postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Reply', default: null } // Reference to parent reply
-});
-
-const Reply = mongoose.model('Reply', replySchema);
-
-// Add a reply to a post
-app.post('/posts/:postId/replies', async (req, res) => {
-  const { content } = req.body;
-  const userId = req.session.userId;
-  const { postId } = req.params;
-
-  if (!content) {
-    return res.status(400).send('Reply content is required');
-  }
-
-  const reply = new Reply({ content, postId, userId });
-
+app.get('/posts/topic/:topic', async (req, res) => {
+  const { topic } = req.params;
   try {
-    await reply.save();
-    res.send({ success: true });
+    const posts = await Post.find({ topic }).sort({ timestamp: -1 }).populate('userId', 'username');
+    res.json(posts);
   } catch (err) {
-    res.status(500).send('Error saving reply');
+    res.status(500).send('Error retrieving posts by topic');
   }
 });
 
-// Fetch replies for a specific post
-app.get('/posts/:postId/replies', async (req, res) => {
-  const { postId } = req.params;
-
-  try {
-    const replies = await Reply.find({ postId }).populate('userId', 'username').sort({ timestamp: -1 });
-    res.json(replies);
-  } catch (err) {
-    res.status(500).send('Error retrieving replies');
-  }
-});
-
-app.post('/posts/:postId/replies', async (req, res) => {
-  const { content, parentId } = req.body; // parentId can be null or the ID of another reply
+app.post('/posts/:postId/replies', isAuthenticated, async (req, res) => {
+  const { content, parentId } = req.body;
   const userId = req.session.userId;
   const { postId } = req.params;
 
@@ -227,6 +191,7 @@ app.post('/posts/:postId/replies', async (req, res) => {
     await reply.save();
     res.send({ success: true });
   } catch (err) {
+    console.error('Error saving reply:', err);
     res.status(500).send('Error saving reply');
   }
 });
@@ -235,19 +200,16 @@ app.get('/posts/:postId/replies', async (req, res) => {
   const { postId } = req.params;
 
   try {
-    // Fetch all replies linked to this post
     const replies = await Reply.find({ postId })
-      .lean() // lean() provides plain JS objects instead of Mongoose Document instances, which helps in manipulating data.
+      .lean()
       .populate('userId', 'username')
       .exec();
 
-    // Create a map to streamline parent-child relationships
     const replyMap = {};
     replies.forEach((reply) => {
       replyMap[reply._id] = { ...reply, children: [] };
     });
 
-    // Nest child replies under their parent
     const nestedReplies = [];
     replies.forEach((reply) => {
       if (reply.parentId) {
@@ -259,6 +221,7 @@ app.get('/posts/:postId/replies', async (req, res) => {
 
     res.json(nestedReplies);
   } catch (err) {
+    console.error('Error retrieving replies:', err);
     res.status(500).send('Error retrieving replies');
   }
 });
@@ -275,4 +238,8 @@ app.get('/post/:postId', async (req, res) => {
   } catch (err) {
     res.status(500).send('Error retrieving post');
   }
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
