@@ -299,3 +299,47 @@ function copyToClipboard(text) {
 // Load initial messages and posts
 getMessages();
 fetchPosts();
+
+document.getElementById('searchButton').addEventListener('click', searchPosts);
+
+async function searchPosts() {
+  const searchQuery = document.getElementById('searchInput').value.trim();
+
+  if (!searchQuery) {
+    alert('Please enter a search query.');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/search?query=${encodeURIComponent(searchQuery)}`);
+    if (response.ok) {
+      const posts = await response.json();
+      displaySearchResults(posts);
+    } else {
+      alert('Failed to search posts.');
+    }
+  } catch (error) {
+    console.error('Error searching posts:', error);
+    alert('An error occurred while searching for posts.');
+  }
+}
+
+function displaySearchResults(posts) {
+  const searchResultsList = document.getElementById('searchResultsList');
+  searchResultsList.innerHTML = '';
+
+  if (posts.length === 0) {
+    searchResultsList.innerHTML = '<li>No results found</li>';
+    return;
+  }
+
+  posts.forEach(post => {
+    const li = document.createElement('li');
+    li.className = 'list-group-item';
+    li.innerHTML = `
+      <h5>${post.userId.username}: ${post.title} (${post.topic})</h5>
+      <p>${post.content}</p>
+    `;
+    searchResultsList.appendChild(li);
+  });
+}

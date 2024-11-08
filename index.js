@@ -243,3 +243,26 @@ app.get('/post/:postId', async (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+app.get('/search', async (req, res) => {
+  const { query } = req.query; // Get the search query from the request
+
+  if (!query) {
+    return res.status(400).send('Search query is required');
+  }
+
+  try {
+    // Search posts by title or content using a case-insensitive regular expression
+    const posts = await Post.find({
+      $or: [
+        { title: { $regex: query, $options: 'i' } },
+        { content: { $regex: query, $options: 'i' } }
+      ]
+    }).populate('userId', 'username');
+
+    res.json(posts);
+  } catch (err) {
+    console.error('Error searching posts:', err);
+    res.status(500).send('Error searching posts');
+  }
+});
