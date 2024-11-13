@@ -143,8 +143,9 @@ async function createPost() {
     });
 
     if (response.ok) {
+      const newPost = await response.json(); // Assuming the server returns the newly created post
+      appendPostToUI(newPost); // Add the new post to the UI
       resetPostForm();
-      fetchPosts();
     } else {
       alert('Failed to create post.');
     }
@@ -152,6 +153,30 @@ async function createPost() {
     console.error('Error creating post:', error);
     alert('An error occurred while creating the post.');
   }
+}
+
+function appendPostToUI(post) {
+  const postsList = document.getElementById('postsList');
+
+  const li = document.createElement('li');
+  li.className = 'list-group-item';
+  const shareLink = generateShareableLink(post._id);
+  li.innerHTML = `
+    <h5>${post.userId.username}: ${post.title} (${post.topic})</h5>
+    <p>${post.content}</p>
+    <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('${shareLink}')">Copy Link</button>
+    <div>
+      <textarea class="form-control mb-2" placeholder="Write a reply" id="replyContent-${post._id}"></textarea>
+      <button class="btn btn-primary btn-sm" onclick="addReply('${post._id}')">Reply</button>
+    </div>
+    <ul id="repliesList-${post._id}" class="list-group mt-2"></ul>
+  `;
+
+  // Insert the new post at the top of the list
+  postsList.prepend(li);
+
+  // Fetch and display replies for the new post
+  fetchReplies(post._id);
 }
 
 function resetPostForm() {

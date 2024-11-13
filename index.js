@@ -145,8 +145,6 @@ app.get('/messages', async (req, res) => {
 });
 
 app.post('/posts', isAuthenticated, async (req, res) => {
-  console.log('Received post creation request:', req.body); // Log received data
-
   const { title, content, topic } = req.body;
   const userId = req.session.userId;
 
@@ -154,12 +152,14 @@ app.post('/posts', isAuthenticated, async (req, res) => {
     return res.status(400).send('Title, content, and topic are required');
   }
 
-  const post = new Post({ title, content, topic, userId });
-
   try {
-    await post.save();
-    console.log('Post saved successfully'); // Debug: Log success
-    res.send({ success: true });
+    const post = new Post({ title, content, topic, userId });
+    const savedPost = await post.save();
+
+    // Populate the user information in a separate query if needed
+    const populatedPost = await Post.findById(savedPost._id).populate('userId', 'username');
+
+    res.json(populatedPost); // Send the saved post with populated user back as a response
   } catch (err) {
     console.error('Error saving post:', err);
     res.status(500).send('Error saving post');
